@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% load static %}
+{% load comments %}
+{% block title %}
+  {{ product.name }}
+{% endblock %}
+{% block content %}
+  <div class="product-detail">
+    <div class="col-sm-4">
+      <img src="{% if product.image %}{{ product.image.url }}{% else %}{% static "img/no-image.jpg"%}{% endif %}" class="img-responsive">
+    </div>
+    <div class="col-sm-8" id='ordering'>
+
+      <h1>{{ product.name }}</h1>
+      <h2><a href="{{ product.category.get_absolute_url }}">{{ product.category }}</a></h2>
+      <p class="price">
+        {% if product.firm %}Производитель: {{ product.firm }} <br>{% endif %}
+        {% if product.has_size != "N" %} Размер: {{ product.size }} <br> {%endif%}
+        Цена: {{ product.price }} руб.<br>
+        {% if not product.stock %}
+        <p>Уточняйте наличие у менеджера</p>
+        {% endif %}
+<!-- рейтинг товара -->
+{% if product.allow_comments %}
+{% for i in '12345' %}
+{% if forloop.counter <= product.get_ratings %}
+<i class='fa fa-star fa-lg'></i>
+  {% else %}
+  <i class='fa fa-star-o fa-lg'></i>
+  {% endif %}
+{% endfor %}
+{% endif %}
+<!-- рейтинг товара -->
+      </p>
+
+
+<form action="{% url "cart:CartAdd" product.id %}" method="post" class="add">
+        <span class="input-group-btn">
+                <button onclick="Min()" type="button" class="btn btn-default btn-number" id="min-button" data-type="minus" data-field="quant[1]">
+                  <span class="glyphicon glyphicon-minus"></span>
+                </button>
+              </span>
+        {{ cart_product_form }}
+        {% csrf_token %}
+        <span class="input-group-btn">
+                <button onclick="Max()" type="button" class="btn btn-default btn-number" data-type="plus" data-field="quant[1]">
+                  <span class="glyphicon glyphicon-plus"></span>
+                </button>
+              </span>
+        <input type="submit" value="Добавить в корзину">
+      </form>
+
+      <span>
+        {{ product.description | linebreaks}}
+      </span>
+        <p>Цвета в ассортименте: {{clrs}}</p><p>Размеры в наличии: {{sizs}}</p>
+    </div>
+
+    <div class='container-fluid'>
+      <div class=col-md-6>
+    <!-- !!! Комментарии !!! -->
+   <!--  Получаем количество коментариев -->
+   {% get_comment_count for product as product_comments_count %}
+   {% if product_comments_count %}<p>отзывы: {{ product_comments_count }}</p>{% endif %}
+   <!-- Получаем сами комментарии и выводим -->
+   <!-- {% render_comment_list for product %} -->
+   {% get_comment_list for product as comment_list %}
+   {% for comment in comment_list %}
+    {{ comment.comment }}<br>
+    Автор: {{ comment.user_name }} - {{ comment.submit_date|date }}<br>
+   {% endfor %}
+   <!--  {% render_comment_form for product %} -->
+   <!-- Получаем форму, выводим скрытые поля или коммент не будет сохранятся!-->
+    {% get_comment_form for product as form %}
+    <form action="{% comment_form_target %}" method="POST" id='addComment' hidden>
+    {% csrf_token %}
+    {% for field in form.hidden_fields %}
+    {{field}}
+    {% endfor %}
+
+    <!-- Скрываем поле honeypot и url - остальные выводим -->
+    {% for field in form.visible_fields %}
+    {% if field.name == 'url'  or field.name == 'honeypot' %}
+    <div style = "display: none;">{{ field }}</div>
+    {% elif field.name == 'name'%}
+    <label>Автор</label><br>
+    {{field}}<br>
+    {% elif field.name == 'email'%}
+    <label>e-mail</label><br>
+    {{field}}<br>
+    {% elif field.name == 'comment'%}
+    <label>Отзыв о товаре</label><br>
+    {{field}}<br>
+<!-- 
+    {{field.label}} - {{ field.name }}<br>
+    {{field}}<br> -->
+    {% endif %}
+    {% endfor %}
+    <!-- перенаправляем на  спец страницу в случае удачного комментария -->
+    <input type="hidden" name="next" value="/success/" />
+    <input type="submit"  value = "Отправить">
+    </form>
+    <button id="addCommentButton" onclick="addComment('addComment', 'addCommentButton')">Написать отзыв о товаре</button>
+</div>
+<!-- Рейтинг комметарии -->
+{% if product.allow_comments %}
+<div class=col-sm-4>
+  рейтиг-отзывов всего: {{product.rate.count}} одобренных: {{product.allow_comments}} <br><br>
+  {% for comnt in product.rate.all %}
+  {% if comnt.display %}
+
+{% for i in '12345' %}
+  {% if forloop.counter <= comnt.rating %}
+  <i class='fa fa-star'></i>
+  {% else %}
+  <i class='fa fa-star-o'></i>
+  {% endif %}
+{% endfor %}<br>
+
+ {{comnt.ratingcomment }}<br>
+ {{comnt.author}} - {{comnt.created|date }}<br><br>
+  
+  {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+<!-- Рейтинг комметарии конец-->
+<!-- Форма рейтинга -->
+<div class='col-md-6'>
+  {% if rating_form %}
+   <form action="" method="post" id='addRating' hidden>
+        {% csrf_token %}
+     {% for field in rating_form %}
+    <b>{{field.label}}</b><br>
+     {{field}}<br>
+     {% endfor %}
+        <input type="submit"  value = "Оценить">
+   </form>
+<button id="addRatingButton" onclick="addComment('addRating', 'addRatingButton')">Оценить товар по рейтигу</button>
+   {% else %}
+<h4> Благодарим Вас за участие в оценке нашего товара!</h4>
+<p>Надеемся, что Вы и дальше останетесь нашим активным клиентом</p>
+<p>Вскоре после проверки администратором он появится на сайте</p>
+
+   {% endif %}
+
+</div>
+
+</div>
+  </div>
+  <script>
+    // баннер добавленого товара в корзину - исчезает через 5 с.
+    var div =document.getElementById('ordering');
+    var p = document.createElement('p');
+    p.className = "alert alert-success";
+    p.innerHTML = "<strong> Товар в вашей корзине </strong> ";
+    var item_ids = {{ cart.id_items|safe }};
+    var item_id = {{ product.id|safe }};
+    if(item_ids.indexOf(item_id.toString()) !== -1){ 
+   div.appendChild(p);
+    setTimeout(function() {
+   div.removeChild(p);
+  }, 5000);
+  };
+  //функция открытия скрытой формы для отзыва и рейтинга
+  function addComment(id1, id2){
+    document.getElementById(id1).hidden = false;
+    document.getElementById(id2).hidden = true;
+  }
+  //функция кнопок
+  function Min(){
+var result = document.getElementById('id_quantity');
+var qty = result.value;
+if( !isNaN( qty )&&qty > 1 ) {result.value--;}
+if( !isNaN( qty )&&qty == 1 ) {document.getElementById('min-button').setAttribute('disabled', 'disabled');}
+return false;
+}
+function Max() {
+var result = document.getElementById('id_quantity');
+var qty = result.value;
+if( !isNaN( qty )) {result.value++;}
+if( !isNaN( qty ) !== 1) {document.getElementById('min-button').removeAttribute('disabled', 'disabled');}
+return false;
+}
+  </script>
+
+{% endblock %}
+
+

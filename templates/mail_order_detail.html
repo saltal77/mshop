@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Заказ # {{ order.id }} от {{ order.created }} из магазина МедОдежды</title>
+  <style>
+th {
+  text-align: left;
+}
+.total {
+  font-size: 15px;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+  <h2>Заказ # {{ order.id }} от {{ order.created }}</h2>
+  <br>
+  <table width="40%">
+    <tr>
+      <th>Создан</th>
+      <td>{{ order.created }}</td>
+    </tr>
+    <tr>
+      <th>Заказчик</th>
+      <td>{{ order.first_name }} {{ order.last_name }}</td>
+    </tr>
+    <tr>
+      <th>E-mail</th>
+      <td><a href="mailto:{{ order.email }}">{{ order.email }}</a></td>
+    </tr>
+    <tr>
+      <th>Адрес</th>
+      <td>{{ order.address }}</td>
+    </tr>
+    <tr>
+      <th>Полная стоимость</th>
+      <td>{{ order.get_total_cost|floatformat:2 }} руб.</td>
+    </tr>
+     <tr>
+      <th>Скидка</th>
+      <td>{% if order.discount %}{{ order.discount }} %{% else %}отсутсвует{% endif %}</td>
+    </tr>
+    <tr>
+      <th>Купон</th>
+      <td>{% if order.cupon %}{{ order.cupon }}{% else %}отсутсвует{% endif %}</td>
+    </tr>
+    <tr>
+      <th>Статус</th>
+      <td>{% if order.paid %}Оплачен{% else %}в ожидании оплаты{% endif %}</td>
+    </tr>
+    <tr>
+      <th>Доставка</th>
+      <td>{% if order.delivery %}Требуется{% else %}не требуется{% endif %}</td>
+    </tr>
+    <tr>
+      <th>Комментарий</th>
+      <td>{% if order.comment %}{{ order.comment }}{% else %}отсутвует{% endif %}</td>
+    </tr>
+  </table>
+      <br>
+      <table width='90%'>
+        <h2>Заказанные товары</h2>
+        <br>
+        <thead>
+          <tr>
+            <th>Товар</th>
+            <th>Цена</th>
+            <th>Количество</th>
+            <th>Стоймость всего</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order.items.all  %}
+            <tr >
+              <td>{{ item.product.name }}</td>
+              <td>{{ item.price }} руб.</td>
+              <td>{{ item.quantity }}</td>
+              <td>{{ item.get_cost }} руб.</td>
+            </tr>
+          {% endfor %}
+          <td>Скидка</td>
+            <td>{{ order.get_total_discount|floatformat:2 }} руб.</td>
+          <tr class="total">
+            <td colspan="3">Итого: </td>
+            <td class="num">{{ order.get_total_cost|floatformat:2 }} руб.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Искренне Ваш магазин МедОдежды </p>
+</body>
+</html>

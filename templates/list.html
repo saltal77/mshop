@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load thumbnail %}
+{% load comments %}
+{% block title %}
+  {% if category %} {{ category.name }} {% else %} Страница товаров {% endif %}
+{% endblock %}
+{% block content %}
+  <div id="sidebar" class="col-sm-3">
+      <!--<p>CD{{cd}}</p>-->
+    <h3>Категории</h3>
+    <ul>
+      <li {% if not category %} class="selected" {% endif %}>
+        <a href="{% url "shop:ProductList" %}"><b>Все</b></a>
+      </li>
+      {% for cat in categories %}
+        <li {% if category.slug == cat.slug %} class="selected" {% endif %}>
+          <a href="{{ cat.get_absolute_url }}"><b>{{ cat.name }}:</b> ({{ cat.types.count }})</a>
+        </li>
+      {% endfor %}
+    </ul>
+
+<form action="" method="get">
+
+    {% for c in colors %}
+    <a href="#" id='{{c}}' class="ColorChoose">{{c}}</a><br>
+    {% endfor %}
+
+ {% for field in form %}
+    {% if field.name == 'sc_select' %}
+     {{field}}
+ {% elif field.name == 'spp_select'%}
+  {{field.label}}: <span id='spp_sel'>{{ field.value|default_if_none:"Максимум" }}{% if field.value %} руб.{% endif %}</span><br>
+ {{field}}<br>
+{% else %}
+{{field.label}}<br>
+ {{field}}<br>
+ {% endif %}
+ {% endfor %}
+  <input type="submit" class='btn btn-default' value="Фильтровать">
+  <a class='btn btn-default' href="{{ category.get_absolute_url }}">Сбросить Фильтр</a>
+</form>
+
+  </div>
+
+  <div id="main" class="product_list col-sm-9">
+    <h1>{% if category %}{{ category.name }}{% else %}Товары{% endif %}</h1>
+    <div class="items row">
+
+     {% regroup products by name as products_list %}
+    {% for product in products_list %}
+
+         <div class="item col-sm-4">  {{ product.grouper }} <br>
+            {% for prod in product.list %}
+            
+            {% if forloop.first %}
+             <b>{{ prod.firm }}</b>
+            <img src='{%  thumbnail prod.image 160x260 crop  %}' class="img-responsive">
+
+            {% endif %}
+
+                 <a href="{{ prod.get_absolute_url }}">  
+                  {% if prod.color %}{{ prod.color }},{%endif%}
+                  {% if prod.has_size != "N" %}{{ prod.size }} ,{%endif%}
+                 {{prod.price}} руб.,
+                {% if prod.get_stock_status %} наличие: {{ prod.stock }}, {% endif %}
+                {% if prod.allow_comments %} рейтинг: {{ prod.get_ratings }}{% endif %}
+                {% if prod.rate.count %} р-отз. вс: {{ prod.rate.count }} {% endif %}
+                {% if prod.allow_comments %}р-отз. одобр: {{prod.allow_comments}}{% endif %}
+              </a><br>
+
+
+            {% endfor %}
+      </div>
+      {% empty %}
+        <p>Товаров не найдено</p>
+
+    {% endfor %}
+
+
+    </div>
+
+<!-- Пагинация на странице -->
+<div>
+{% if products.has_other_pages %}
+  <ul class="pagination">
+    {% if products.has_previous %}
+      <li><a href="?page={{ products.previous_page_number }}{% if request.GET.query %}&query={{request.GET.query }}{% endif %}{% if request.GET.sc_select  and request.GET.sc_select != ' ' %}&sc_select={{request.GET.sc_select }}{% endif %}{% if request.GET.sz_select  and request.GET.sz_select != ' ' %}&sz_select={{request.GET.sz_select }}{% endif %}{% if request.GET.st_select  and request.GET.st_select != ' ' %}&st_select={{request.GET.st_select }}{% endif %}{% if request.GET.sp_select  and request.GET.sp_select != ' ' %}&sp_select={{request.GET.sp_select }}{% endif %}{% if request.GET.sn_select  and request.GET.sn_select != ' ' %}&sn_select={{request.GET.sn_select }}{% endif %}{% if request.GET.r_select  %}&r_select={{request.GET.r_select }}{% endif %}{% if request.GET.spp_select and request.GET.spp_select != '5000' %}&spp_select={{request.GET.spp_select }}{% endif %}">&laquo;</a></li>
+    {% else %}
+      <li class="disabled"><span>&laquo;</span></li>
+    {% endif %}
+    {% for i in products.paginator.page_range %}
+      {% if products.number == i %}
+        <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+      {% else %}
+        <li><a href="?page={{ i }}{% if request.GET.query %}&query={{request.GET.query }}{% endif %}{% if request.GET.sc_select  and request.GET.sc_select != ' ' %}&sc_select={{request.GET.sc_select }}{% endif %}{% if request.GET.sz_select  and request.GET.sz_select != ' ' %}&sz_select={{request.GET.sz_select }}{% endif %}{% if request.GET.st_select  and request.GET.st_select != ' ' %}&st_select={{request.GET.st_select }}{% endif %}{% if request.GET.sp_select  and request.GET.sp_select != ' ' %}&sp_select={{request.GET.sp_select }}{% endif %}{% if request.GET.sn_select  and request.GET.sn_select != ' ' %}&sn_select={{request.GET.sn_select }}{% endif %}{% if request.GET.r_select  %}&r_select={{request.GET.r_select }}{% endif %}{% if request.GET.spp_select and request.GET.spp_select != '5000' %}&spp_select={{request.GET.spp_select }}{% endif %}">{{ i }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if products.has_next %}
+      <li><a href="?page={{ products.next_page_number }}{% if request.GET.query %}&query={{request.GET.query }}{% endif %}{% if request.GET.sc_select  and request.GET.sc_select != ' ' %}&sc_select={{request.GET.sc_select }}{% endif %}{% if request.GET.sz_select  and request.GET.sz_select != ' ' %}&sz_select={{request.GET.sz_select }}{% endif %}{% if request.GET.st_select  and request.GET.st_select != ' ' %}&st_select={{request.GET.st_select }}{% endif %}{% if request.GET.sp_select  and request.GET.sp_select != ' ' %}&sp_select={{request.GET.sp_select }}{% endif %}{% if request.GET.sn_select  and request.GET.sn_select != ' ' %}&sn_select={{request.GET.sn_select }}{% endif %}{% if request.GET.r_select  %}&r_select={{request.GET.r_select }}{% endif %}{% if request.GET.spp_select and request.GET.spp_select != '5000' %}&spp_select={{request.GET.spp_select }}{% endif %}">&raquo;</a></li>
+    {% else %}
+      <li class="disabled"><span>&raquo;</span></li>
+    {% endif %}
+  </ul>
+{% endif %}
+</div>
+<!-- Пагинация на странице -->
+  
+
+  </div>
+
+<script>
+  
+    //Проставляет цену инпуту полозку когда сдвигается с Максимума
+  function curVal() {
+    var price = document.getElementById("id_spp_select").value;
+    document.getElementById("spp_sel").innerHTML = price  + ' руб.';
+   }
+//Автокомплит из слов в БД продуктов Jquery UI
+  $( function() {
+    var availableTags = {{ words|safe }};
+    $( "#tags" ).autocomplete({
+      source: availableTags
+    });
+  } );
+  //Выбор цвета для фильтров
+$('.ColorChoose').click(function(e){
+e.preventDefault();
+$('#color').val(this.id)
+    console.log($('#color').val())
+})
+</script>
+
+{% endblock %}

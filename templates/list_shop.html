@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load comments %}
+{% block title %}
+  {% if category %} {{ category.name }} {% else %} Страница товаров {% endif %}
+{% endblock %}
+{% block content %}
+  <div id="sidebar" class="col-sm-3">
+    <h3>Категории</h3>
+      <!--<p>Ordered{{bestseller}}</p>-->
+      <!--<p>SC{{sc_select}}SZ{{sz_select}}words{{words}} cd {{cd}}</p>-->
+    <ul>
+      <li {% if not category %} class="selected" {% endif %}>
+        <a href="{% url "shop:ProductList" %}"><b>Все</b></a>
+      </li>
+
+      {% for cat in categories %}
+        <li {% if category.slug == cat.slug %} class="selected" {% endif %}>
+          <a href="{{ cat.get_absolute_url }}"><b>{{ cat.name }}:</b> ({{ cat.types.count }})</a>
+        </li>
+      {% endfor %}
+
+    </ul>
+
+<form action=""  method="get">
+    {% for c in colors %}
+    <a href="#" id='{{c}}' class="ColorChoose">{{c}}</a><br>
+    {% endfor %}
+    <!--<a href="#" id='Белый' class="ColorChoose">Белый</a><br>-->
+    <!--<a href="#" id='Бежевый' class="ColorChoose">Бежевый</a><br>-->
+    <!--<a href="#" id='Зеленый' class="ColorChoose">Зеленый</a><br>-->
+ {% for field in form %}
+    {% if field.name == 'sc_select' %}
+     {{field}}
+ {% elif field.name == 'spp_select'%}
+  {{field.label}}: <span id='spp_sel'>{{ field.value|default_if_none:"Максимум" }}{% if field.value %} руб.{% endif %}</span><br>
+ {{field}}<br>
+    {% elif field.name == 'price_min' %}
+    от {{ field }} <b>&#x20BD;</b> <br>
+    {% elif field.name == 'price_max' %}
+    до {{ field }} <b>&#x20BD;</b> <br>
+{% else %}
+{{field.label}}<br>
+ {{field}}<br>
+ {% endif %}
+ {% endfor %}
+
+  <input type="submit" class='btn btn-default' value="Фильтровать">
+  <a class='btn btn-default' href="{% url "shop:ProductList" %}">Сбросить Фильтр</a>
+</form>
+ 
+  </div>
+
+  <div id="main" class="product_list col-sm-9">
+    <h1>{% if category %}{{ category.name }}{% else %}Последние поступления{% endif %}</h1>
+    
+<div class="items row">
+<!-- ====== -->
+
+    {% for prod in products %}
+        <div class="item col-sm-4">  
+            <img src="{% if prod.image %}{{ prod.image.url }}{% else %}{% static "img/no-image.jpg"%}{% endif %}" class="img-responsive">
+            <a href="{{ prod.get_absolute_url }}">
+            {{prod.price}} руб.</a><br>
+            <span>{{ prod.description|truncatewords:2 }}</span><br>
+            {% if prod.firm %} <span><b>{{ prod.firm }}</b></span> <br>{% endif %}
+            <span>{{prod.color}}  {% if prod.has_size != "N" %}/ {{ prod.size }}<br>{% endif %}</span><br>
+            <span> {%if prod.order_items.count %}куплено {{ prod.order_items.count }}{% endif %}</span>
+
+<!-- Переделка  окончания названия категорий по единственному числу товара -->
+         <p>
+          {% if prod.str_category not in 'Брюки, Ботинки, Шапки, Куртки' %}
+           {{ prod.str_category|lower|cut:'и'|cut:'ы' }}
+           {% elif prod.str_category in 'Шапки, Куртки' %}
+           {{ prod.str_category|lower|cut:'и'|add:'а' }}
+          {% else %}
+          {{ prod.category|lower }}
+          {% endif %}
+          {% if prod.has_size != "N" %}{{prod.type|lower|truncatechars:6|cut:'..'}}{% endif %}
+          </p>
+<!-- Переделка  окончания названия категорий по единственному числу товара конец -->
+
+            <!-- <p>{{ prod.type|cut:"ие"|add:"ая одежда"}}</p> -->
+            {% get_comment_count for prod as product_comments_count %}
+   {% if product_comments_count %}<p>отзывы: {{ product_comments_count }}</p><br>{% endif %}
+   <!-- рейтинг комментарии -->
+   {% if prod.allow_comments %}
+   рейтинг-комментариев: {{prod.allow_comments}}<br>
+   {% endif %}
+
+<!-- рейтинг товара -->
+ <!-- if prod.rate.first  -->
+ {% if prod.allow_comments %}
+   {% for i in '12345' %}
+   {% if forloop.counter <= prod.get_ratings %}
+  <i class='fa fa-star'></i>
+  {% else %}
+  <i class='fa fa-star-o'></i>
+  {% endif %}
+   {% endfor %}
+   {%endif%}
+
+
+<!-- рейтинг товара -->
+
+        </div>
+        {% empty %}
+        <p>Товаров не найдено</p>
+    {% endfor %}
+    </div>
+
+<!-- Пагинация на странице -->
+
+
+
+
+      <div>
+{% if products.has_other_pages %}
+  <ul class="pagination">
+    {% if products.has_previous %}
+      <li><a href="?page={{ products.previous_page_number }}{% if request.GET.query %}&query={{request.GET.query }}{% endif %}">&laquo;</a></li>
+    {% else %}
+      <li class="disabled"><span>&laquo;</span></li>
+    {% endif %}
+    {% for i in products.paginator.page_range %}
+      {% if products.number == i %}
+        <li class="active"><span>{{ i }} <span class="sr-only">(current)</span></span></li>
+      {% else %}
+        <li><a href="?page={{ i }}{% if request.GET.query %}&query={{request.GET.query }}{% endif %}">{{ i }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if products.has_next %}
+      <li><a href="?page={{ products.next_page_number }}{% if request.GET.query %}&query={{request.GET.query }}{% endif %}">&raquo;</a></li>
+    {% else %}
+      <li class="disabled"><span>&raquo;</span></li>
+    {% endif %}
+  </ul>
+{% endif %}
+</div>
+
+
+
+
+
+<!-- Пагинация на странице -->
+
+<!--Лучшие по продаже продукты-->
+      <div>
+          {%for best in bestseller %}
+          <a href="{{ best.get_absolute_url }}">{{best.name}}
+          куплено: {{best.order_items.count}} -sells- {{ best.sells }}
+              {{best.size }}</a><br>
+          {% endfor %}
+      </div>
+<!--Лучшие по продаже продукты конец-->
+
+  </div>
+
+<script>
+
+ 
+    //Проставляет цену инпуту полозку когда сдвигается с Максимума
+  function curVal() {
+    var price = document.getElementById("id_spp_select").value;
+    document.getElementById("spp_sel").innerHTML = price  + ' руб.';
+   }
+//Автокомплит из слов в БД продуктов Jquery UI
+  $( function() {
+    var availableTags = {{ words|safe }};
+    $( "#tags" ).autocomplete({
+      source: availableTags
+    });
+  } );
+//Выбор цвета для фильтров
+$('.ColorChoose').click(function(e){
+e.preventDefault();
+$('#color').val(this.id)
+    console.log($('#color').val())
+})
+
+  </script>
+
+{% endblock %}

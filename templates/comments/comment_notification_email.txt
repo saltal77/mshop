@@ -1,0 +1,7 @@
+На сайте был оставлен новый комментарий:
+товар {{ content_object.name }};
+пользователь {{ comment.user_name }};
+почта {{comment.user_email}} ;
+Коммент {{comment.comment}} ;
+Дата {{comment.submit_date }};
+
