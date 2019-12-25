@@ -1,2 +1,2 @@
-Test Project - shop on Django
+Test Project - shop on Django, 
 Пробный проект магазина на Django
